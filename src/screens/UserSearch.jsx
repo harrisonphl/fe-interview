@@ -1,7 +1,7 @@
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useContext, useEffect, useState } from "react";
 import { string, object } from "yup";
-import { API_URL } from "../constants";
+import { API_URL, SortOrder } from "../constants";
 import { useNavigate } from "react-router-dom";
 import { SearchContext } from "../SearchContext";
 
@@ -23,36 +23,40 @@ const validationSchema = object().shape({
 const UserSearch = () => {
   const { searchContext, setSearchContext } = useContext(SearchContext);
 
-  console.log(searchContext)
-
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState(searchContext.searchQuery);
-  const [searchResult, setSearchResult] = useState(searchContext.searchResult);
+  // const [searchValue, setSearchValue] = useState(searchContext.searchQuery);
+  // const [searchResult, setSearchResult] = useState(searchContext.searchResult);
 
   const getData = () => {
-    fetch(`${API_URL}/api/users?trackingNumber=${searchValue}`).then(res => res.json()).then(res => {
+    console.log('getData()')
+    // console.log(searchValue)
+    console.log(searchContext.searchQuery)
+    fetch(`${API_URL}/api/users?trackingNumber=${searchContext.searchQuery}`)
+    .then(res => res.json())
+    .then(res => {
       console.log(res)
       setSearchContext({
-        searchValue:{
-          searchResult: [...res]
-        }})
-      // setSearchResult(res);
+          searchQuery: searchContext.searchQuery,
+          searchResult: [...res],
+          originalOrder: [...res]
+        })
     })
   }
 
   const sort = (sortType) => {
-    if(sortType === 'descending'){
-      const sortedResult = searchResult.sort((a, b) => b.email.localeCompare(a.email));
+    const oldContext = searchContext
+    if(sortType === SortOrder.DESCENDING){
+      const sortedResult = searchContext.searchResult.sort((a, b) => b.email.localeCompare(a.email));
       console.log(sortedResult)
-      setSearchContext({ searchValue: { searchResult: [...sortedResult]}})
-      // setSearchResult([...sortedResult]);
-    } else if(sortType === 'original') {
-      getData();
+      oldContext.searchResult = [...sortedResult]
+      setSearchContext(oldContext)
+    } else if(sortType === SortOrder.ORIGINAL) {
+      console.log(searchContext)
+      setSearchContext({searchResult: [...searchContext.originalOrder]})
     } else {
-      const sortedResult = searchResult.sort((a, b) => a.email.localeCompare(b.email));
+      const sortedResult = searchContext.searchResult.sort((a, b) => a.email.localeCompare(b.email));
       console.log(sortedResult)
-      setSearchContext({ searchValue: { searchResult: [...sortedResult]}})
-      // setSearchResult([...sortedResult]);
+      setSearchContext({searchResult: [...sortedResult]})
     }
   }
 
@@ -70,9 +74,8 @@ const UserSearch = () => {
             {/* <Field name="trackingNumber" placeholder="Tracking Number" /> */}
             <input name="trackingNumber" placeholder="Tracking Number" onChange={(e) => {
               setSearchContext({ searchQuery: e.target.value })
-              // setSearchValue(e.target.value);
-            }} value={searchContext.searchQuery}/>
-            <button type="submit" >Search</button>
+            }} value={searchContext.searchQuery || ''}/>
+            <button type="submit">Search</button>
           </div>
           <div className="search-error">
             <ErrorMessage name="trackingNumber" />
@@ -80,9 +83,9 @@ const UserSearch = () => {
         </Form>
       </Formik>
       <div>
-        <button onClick={() => sort('Ascending')}>Sort Ascending by email</button>
-        <button onClick={() => sort('descending')}>Sort descending by email</button>
-        <button onClick={() => sort('original')}>Sort orignal by email</button>
+        <button onClick={() => sort(SortOrder.ASCENDING)}>Sort Ascending by email</button>
+        <button onClick={() => sort(SortOrder.DESCENDING)}>Sort descending by email</button>
+        <button onClick={() => sort(SortOrder.ORIGINAL)}>Sort orignal by email</button>
       </div>
       <div className="search-results">
         <table>
@@ -94,7 +97,7 @@ const UserSearch = () => {
             </tr>
           </thead>
           <tbody>
-            {searchResult && searchResult.map((item) => (
+            {searchContext.searchResult && searchContext.searchResult.map((item) => (
               <tr key={item.id} onClick={() => navigate(`/user/${item.id}`)}>
               <th>{item.email}</th>
               <th>{item.first}</th>

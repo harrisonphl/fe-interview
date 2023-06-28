@@ -10,7 +10,8 @@ function App() {
   const [searchContext, setSearchContext] = useState({
     searchContext: {
       searchQuery: '',
-      searchResult: []
+      searchResult: [],
+      originalOrder: []
     },
     setSearchContext: () => { }
   })

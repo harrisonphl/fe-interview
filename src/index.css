@@ -49,7 +49,7 @@ h1 {
 }
 
 .search-input input {
-  flex-grow: 1;
+  flex-grow:0.5;
 }
 
 .search-results {
